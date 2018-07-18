@@ -1,0 +1,5 @@
+# Laisser cette premiere ligne pour limiter les telechargements redondants
+deb [local=true] copy:///var/pkg/rm_b/mirrors main rm
+
+deb	https://clip.ssi.gouv.fr/mirrors/clip-clt-dpkg/rm/rm-core-conf rm main 
+deb	https://clip.ssi.gouv.fr/mirrors/clip-clt-dpkg/rm/rm-apps-conf rm main 

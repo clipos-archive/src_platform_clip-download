@@ -1,0 +1,15 @@
+Dir::Etc "/etc/admin/clip_download";
+Dir::Etc::SourceList "/var/run/sources.list.rm_h";
+Dir::Cache "/var/pkg/rm_h/cache/apt/clip_download/rm";
+Dir::State "/var/pkg/rm_h/cache/apt/clip_download/rm";
+Dir::State::Status "/var/pkg/rm_h/lib/dpkg/status";
+Acquire {
+	PDiffs "false";
+	Languages "none";
+	https {
+		UserAgent "CLIP/APT";
+		CaPath "/etc/admin/clip_download/cacerts";
+		SslKey "/etc/admin/clip_download/private/apt.key.pem";
+		SslCert "/etc/admin/clip_download/private/apt.cert.pem";
+	};
+};

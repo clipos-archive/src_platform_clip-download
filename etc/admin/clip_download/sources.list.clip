@@ -1,0 +1,2 @@
+deb	https://clip.ssi.gouv.fr/mirrors/clip-clt-dpkg/clip/clip-core-conf clip main
+deb	https://clip.ssi.gouv.fr/mirrors/clip-clt-dpkg/clip/clip-apps-conf clip main

@@ -1,0 +1,105 @@
+#!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# Copyright © 2007-2018 ANSSI. All Rights Reserved.
+set -e
+#######################################################################
+# CLIP update tool
+# Author: EADS Defence & Security
+# Modified by SGDN (Vincent Strubel) 2008
+#######################################################################
+
+# Positionning of the locale
+export LC_ALL=C
+
+# Global variables
+g_version="2.0"
+
+# Binaries directories
+g_bin_dir="/bin/"
+
+############################################
+# Function : display the usage of the tool
+############################################
+usage() {
+	${g_bin_dir}echo "Usage : clip_update_lock [-hv] -j jail"
+	${g_bin_dir}echo "Lock update for CLIP packages"
+	${g_bin_dir}echo ""
+	${g_bin_dir}echo "Mandatory parameters are :"
+	${g_bin_dir}echo "  -j jail     jail to lock (clip, rm_h or rm_b)"
+	${g_bin_dir}echo ""
+	${g_bin_dir}echo "Options are :"
+	${g_bin_dir}echo "  -h			print this help"
+	${g_bin_dir}echo "  -v			print the version of this tool"
+	${g_bin_dir}echo ""
+}
+
+############################################
+# Function : display the version of the tool
+############################################
+version() {
+	${g_bin_dir}echo "clip_update_lock version $g_version"
+}
+
+############################################
+# Function : verify if a directory exists
+############################################
+verify_directory() {
+	if [ ! -d $1 ] 
+	then
+		${g_bin_dir}echo "Directory $1 does not exist"
+		exit 1
+	fi
+}
+
+############################################
+# Main
+############################################
+
+# Empty environnement
+env -i
+
+# Verify and set the options
+while getopts j:vh arg
+do
+	case $arg in
+		j)
+			g_jail="$OPTARG"
+		;;
+		v)
+			version
+			exit 0
+		;;
+		h)
+			usage
+			exit 0
+		;;
+		\?)
+			usage
+			exit 2
+		;;
+	esac
+done
+shift `${g_bin_dir}expr $OPTIND - 1`
+
+if [ "${g_jail}" != "clip" -a "${g_jail}" != "rm_h" -a "${g_jail}" != "rm_b" ]
+then
+	usage
+	${g_bin_dir}echo "Invalid jail (clip, rm_h or rm_b)"
+	exit 1
+fi
+
+# Where is the mirror ?
+if [[ "${g_jail}" == "clip" ]]; then
+	g_mirror_directory="/var/pkg"
+else
+	g_mirror_directory="/var/pkg/${g_jail}"
+fi
+
+verify_directory ${g_mirror_directory}
+
+# Where is the lock file ?
+g_lock_file=${g_mirror_directory}"/clip_update.lck"
+
+[ ! -e ${g_lock_file} ] && ${g_bin_dir}touch ${g_lock_file}
+
+exit 0

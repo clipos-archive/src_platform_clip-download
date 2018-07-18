@@ -1,0 +1,2 @@
+Debug::Acquire::Https "0";
+Debug::pkgAcquire::Worker "0";

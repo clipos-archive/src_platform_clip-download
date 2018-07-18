@@ -1,0 +1,555 @@
+# ChangeLog for <app-clip>/<clip-download>
+
+*clip-download-2.4.1-r1 (15 Jun 2017)
+
+  15 Jun 2017; Timothée Ravier <clipos@ssi.gouv.fr>
+  +clip-download-2.4.1-r1.ebuild, -clip-download-2.4.1.ebuild:
+  Remove 'remove-other-perms' call as this breaks install_cert usage.
+
+*clip-download-2.4.1 (18 Oct 2016)
+
+  18 Oct 2016; Alain Ozanne <clipos@ssi.gouv.fr>
+  +clip-download-2.4.1.ebuild, -clip-download-2.4.0.ebuild:
+  Added dependency on jail_init virtual service provided by init_cgroups.
+
+*clip-download-2.4.0 (28 Jun 2016)
+
+  28 Jun 2016; Timothée Ravier <clipos@ssi.gouv.fr>
+  +clip-download-2.4.0.ebuild, -clip-download-2.3.8.ebuild:
+  Civil crypto support.
+
+*clip-download-2.3.8 (04 Sep 2015)
+
+  04 Sep 2015; Mickaël Salaün <clipos@ssi.gouv.fr>
+  +clip-download-2.3.8.ebuild, -clip-download-2.3.7.ebuild:
+  install_cert - Fix useless warning.
+
+*clip-download-2.3.7 (06 May 2014)
+
+  06 May 2014; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.3.7.ebuild, -clip-download-2.3.6-r1.ebuild:
+  Be more cautious with dpkg's capitalization of control fields
+  in list_optional().
+
+*clip-download-2.3.6-r1 (30 Dec 2013)
+
+  30 Dec 2013; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.3.6-r1.ebuild, -clip-download-2.3.6.ebuild:
+  Force rebuild to add openrc dependency.
+
+*clip-download-2.3.6 (22 Oct 2013)
+
+  22 Oct 2013; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.3.6.ebuild, -clip-download-2.3.5.ebuild:
+  Remove initial_download support, since it is quite unused.
+
+*clip-download-2.3.5 (18 Oct 2013)
+
+  18 Oct 2013; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.3.5.ebuild, -clip-download-2.3.4.ebuild,
+  files/_debian/postinst, files/_debian/prerm:
+  Remove useless clip_update_unlock script.
+
+*clip-download-2.3.4 (19 Jul 2013)
+
+  19 Jul 2013; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.3.4.ebuild, -clip-download-2.3.3.ebuild,
+  files/_debian/postinst:
+  Tag /var/pkg/... mirrors as local in various sources.list 
+  files.
+
+*clip-download-2.3.3 (31 May 2013)
+
+  31 May 2013; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.3.3.ebuild, -clip-download-2.3.2.ebuild:
+  Fix permissions of optional cache / list.
+
+*clip-download-2.3.2 (15 Nov 2012)
+
+  15 Nov 2012; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.3.2.ebuild, -clip-download-2.3.1-r1.ebuild:
+  Update /etc/admin/.../optional.conf.jail after each download, 
+  to filter out any optional packages which are no longer 
+  authorized.
+
+*clip-download-2.3.1-r1 (07 Nov 2012)
+
+  07 Nov 2012; Mickaël Salaün <clipos@ssi.gouv.fr>
+  +clip-download-2.3.1-r1.ebuild, -clip-download-2.3.1.ebuild,
+  files/_debian/postinst:
+  Backport certificates permissions fixes from clip-core-conf.
+
+*clip-download-2.3.1 (06 Nov 2012)
+
+  06 Nov 2012; Mickaël Salaün <clipos@ssi.gouv.fr>
+  +clip-download-2.3.1.ebuild, -clip-download-2.3.0-r1.ebuild,
+  files/_debian/postinst:
+  Move host certificate and key in a private or CA directory.
+
+*clip-download-2.3.0-r1 (06 Nov 2012)
+
+  06 Nov 2012; Mickaël Salaün <clipos@ssi.gouv.fr>
+  +clip-download-2.3.0-r1.ebuild, -clip-download-2.3.0.ebuild,
+  +files/disable-verify-host.patch:
+  Disable x509 DN check for clip-hermes.
+
+*clip-download-2.3.0 (06 Nov 2012)
+
+  06 Nov 2012; Mickaël Salaün <clipos@ssi.gouv.fr>
+  +clip-download-2.3.0.ebuild, -clip-download-2.2.8.ebuild:
+  Use dynamic download URL with the MAC address and the hostname to easily
+  identify a client (if template sourcelist files contains the patterns).
+
+*clip-download-2.2.8 (09 Aug 2012)
+
+  09 Aug 2012; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.2.8.ebuild, -clip-download-2.2.7.ebuild:
+  Do not generate a full list of selected/unselected optional
+  packages after a download, but only a cache of package names
+  and descriptions.
+
+*clip-download-2.2.7 (14 Jun 2012)
+
+  14 Jun 2012; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.2.7.ebuild, -clip-download-2.2.6.ebuild:
+  Return explicit error codes when downloads fail.
+
+*clip-download-2.2.6 (20 Apr 2012)
+
+  20 Apr 2012; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.2.6.ebuild, -clip-download-2.2.5.ebuild:
+  Include category information in optional package lists.
+
+*clip-download-2.2.5 (12 Apr 2012)
+
+  12 Apr 2012; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.2.5.ebuild, -clip-download-2.2.4.ebuild:
+  Explicitly check dates on sig verification.
+
+*clip-download-2.2.4 (11 Apr 2012)
+
+  11 Apr 2012; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.2.4.ebuild, -clip-download-2.2.3.ebuild:
+  Fix build.
+
+*clip-download-2.2.3 (05 Mar 2012)
+
+  05 Mar 2012; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.2.3.ebuild, -clip-download-2.2.2.ebuild:
+  Fix clip_download init script for pid namespace.
+
+*clip-download-2.2.2 (19 Sep 2011)
+
+  19 Sep 2011; Mickaël Salaün <clipos@ssi.gouv.fr>
+  +clip-download-2.2.2.ebuild, -clip-download-2.2.1.ebuild:
+  Add jail to get_confname call.
+
+*clip-download-2.2.1 (12 Sep 2011)
+
+  12 Sep 2011; Mickaël Salaün <clipos@ssi.gouv.fr>
+  +clip-download-2.2.1.ebuild, -clip-download-2.2.0.ebuild:
+  Fix list_optional for level specific configurations.
+
+*clip-download-2.2.0 (17 Aug 2011)
+
+  17 Aug 2011; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.2.0.ebuild, -clip-download-2.1.5.ebuild:
+  Switch signature checks to ccsd-check-daemon.
+
+*clip-download-2.1.5 (01 Aug 2011)
+
+  01 Aug 2011; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.1.5.ebuild, -clip-download-2.1.4.ebuild:
+  Generate lists of optional packages after each download, for
+  use by clip-config -U.
+
+*clip-download-2.1.4 (28 Jul 2011)
+
+  28 Jul 2011; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.1.4.ebuild, -clip-download-2.1.3-r2.ebuild:
+  Adjust apt.conf.* for new apt (>= 0.8.15.2).
+
+*clip-download-2.1.3-r2 (07 Jun 2011)
+
+  07 Jun 2011; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.1.3-r2.ebuild, -clip-download-2.1.3-r1.ebuild:
+  Fix /usr/local/var path - make it /mounts/usr/var, which makes more
+  sense in a core package.
+
+*clip-download-2.1.3-r1 (23 May 2011)
+
+  23 May 2011; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.1.3-r1.ebuild, -clip-download-2.1.3.ebuild:
+  Add effective CAP_KILL to start-stop-daemon in context 0.
+
+*clip-download-2.1.3 (12 May 2011)
+
+  12 May 2011; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.1.3.ebuild, -clip-download-2.1.2.ebuild:
+  Fix install_cert for openssl-1.0.0, by Yves-Alexis Perez.
+
+*clip-download-2.1.2 (13 Jan 2011)
+
+  13 Jan 2011; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.1.2.ebuild, -clip-download-2.1.1.ebuild:
+  Automatically remove /var/pkg/clip_core_noupdate on a new
+  core config download.
+
+*clip-download-2.1.1 (06 Dec 2010)
+
+  06 Dec 2010; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.1.1.ebuild, -clip-download-2.1.0.ebuild:
+  Add a new lock to prevent simultaneous automatic downloads
+  on different RM jails - this prevents proper use of the
+  shared mirrors.
+  Fix typo in mirror update recovery.
+
+*clip-download-2.1.0 (26 Jan 2010)
+
+  26 Jan 2010; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.1.0.ebuild, -clip-download-2.0.8.ebuild:
+  +files/_debian/postinst,+files/_debian/prerm:
+  Make maintainer scripts static. Support reading the list
+  of RM jails from /etc/conf.d/clip, to support 0, 1 or 2
+  RM jails from the same script.
+
+*clip-download-2.0.8 (14 Jan 2010)
+
+  14 Jan 2010; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.0.8.ebuild, -clip-download-2.0.7.ebuild:
+  Allow downloads to be launched by downloadmaster even
+  when network config lock is present.
+
+*clip-download-2.0.7 (12 Jan 2010)
+
+  12 Jan 2010; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.0.7.ebuild, -clip-download-2.0.6.ebuild:
+  Heed global locks on downloads created by network config 
+  => do not run new downloads when a UMTS profile is active.
+
+*clip-download-2.0.6 (22 Jun 2009)
+
+  22 Jun 2009; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.0.6.ebuild, -clip-download-2.0.5.ebuild:
+  /etc/init.d/clip_download no longer depends on kmpd.
+
+*clip-download-2.0.5 (04 May 2009)
+
+  04 May 2009; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.0.5.ebuild, -clip-download-2.0.4.ebuild:
+  Log to LOG_LOCAL7 rather than LOG_USER.
+
+  17 Apr 2009; Vincent Strubel <clipos@ssi.gouv.fr>
+  clip-download-2.0.4.ebuild:
+  Switch to verictl2.eclass.
+
+*clip-download-2.0.4 (18 Mar 2009)
+
+  18 Mar 2009; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.0.4.ebuild, -clip-download-2.0.3.ebuild:
+  Fix gcc4 compilation.
+
+*clip-download-2.0.3 (11 Mar 2009)
+
+  11 Mar 2009; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.0.3.ebuild, -clip-download-2.0.2-r2.ebuild:
+  Switch to new ADMIN layout - use clip_install/ optional config
+  files, rather than dedicated ones for clip_download.
+
+  29 Jan 2009; Vincent Strubel <clipos@ssi.gouv.fr>
+  clip-download-2.0.2-r2.ebuild:
+  Really fix options parsing. 
+
+*clip-download-2.0.2-r2 (28 Jan 2009)
+
+  28 Jan 2009; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.0.2-r2.ebuild, -clip-download-2.0.2-r1.ebuild,
+  -files/root_clip_download, -files/root_clip_download.corerm: 
+  Fix ionice options parsing with --.
+  Remove useless static crontab files.
+
+*clip-download-2.0.2-r1 (23 Jan 2009)
+
+  23 Jan 2009; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.0.2-r1.ebuild, -clip-download-2.0.2.ebuild:
+  Run clip_download cron jobs under ionice -c 3.
+
+*clip-download-2.0.2 (21 Jan 2009)
+
+  21 Jan 2009; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.0.2.ebuild, -clip-download-2.0.1.ebuild:
+  Fix typo in optional packages file paths.
+
+*clip-download-2.0.1 (20 Jan 2009)
+
+  20 Jan 2009; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.0.1.ebuild, -clip-download-2.0.ebuild:
+  Support for optional packages.
+
+*clip-download-2.0 (23 Oct 2008)
+
+  23 Oct 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-2.0.ebuild, -clip-download-1.99-r4.ebuild:
+  First stable release of the next-generation clip_download.
+  Support download locking detection for downloadmaster.
+  Documentation still needs to be updated.
+
+*clip-download-1.99-r4 (20 Oct 2008)
+
+  20 Oct 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.99-r4.ebuild, -clip-download-1.99-r3.ebuild:
+  Pass recovered package list to clip_update_mirror(), so that 
+  only those packages and those downloaded and checked are copied
+  into the local mirror.
+
+*clip-download-1.99-r3 (20 Oct 2008)
+
+  20 Oct 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.99-r3.ebuild, -clip-download-1.99-r2.ebuild:
+  Add support for core update notification.
+  Use RM_H local mirror as RM_B remote mirror, and conversely, to 
+  limit network downloads.
+
+*clip-download-1.99-r2 (16 Oct 2008)
+
+  16 Oct 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.99-r2.ebuild, -clip-download-1.99-r1.ebuild:
+  Support locking by downloadrequest.
+  Support optimized error recovery - leftover packages are rechecked,
+  and those that pass are added to the mirror without being re-downloaded.
+
+*clip-download-1.99-r1 (16 Oct 2008)
+
+  16 Oct 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.99-r1.ebuild, -clip-download-1.99.ebuild:
+  Support new cache/mirror layout for copyless updates.
+
+*clip-download-1.99 (16 Oct 2008)
+
+  16 Oct 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.99.ebuild, -clip-download-1.3.13.ebuild:
+  Bump to 'ng', perl based version.
+
+*clip-download-1.3.13 (13 Oct 2008)
+
+  13 Oct 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.13.ebuild, -clip-download-1.3.12.ebuild:
+  Do not backup the cache, nor rebuild the mirror, if no new
+  configurations are to be downloaded.
+  Remove invalid packages (i.e. those for which dpkg -f returns 
+  an actual error when trying to extract the release / build date)
+  from the mirror, so that the presence of one such package does not
+  break the whole upgrade system.
+  Fix /update_priv/rm_X.. path creation (thankfully the correct paths
+  where created by baselayout-core-updatepriv).
+
+*clip-download-1.3.12 (10 Oct 2008)
+
+  10 Oct 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.12.ebuild, -clip-download-1.3.11-r1.ebuild:
+  Be more cautious when backing up directories : do not leave an
+  incomplete backup to be used by later runs (of clip_download or
+  clip_install).
+
+*clip-download-1.3.11-r1 (03 Oct 2008)
+
+  03 Oct 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.11-r1.ebuild, -clip-download-1.3.11.ebuild:
+  Add nice -n 15 to cron calls of clip-download.
+
+*clip-download-1.3.11 (17 Sep 2008)
+
+  17 Sep 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.11.ebuild, -clip-download-1.3.10-r2.ebuild:
+  Add support for core update availability notification through
+  /usr/local/var/core_avail.
+
+*clip-download-1.3.10-r2 (26 Aug 2008)
+
+  26 Aug 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.10-r2.ebuild, -clip-download-1.3.10-r1.ebuild:
+  Fix trailing whitespaces after backslash in postinst - calls to 
+  clip_download were not added to UPDATE's cron.
+
+*clip-download-1.3.10-r1 (10 Jul 2008)
+
+  10 Jul 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.10-r1.ebuild, -clip-download-1.3.10.ebuild,
+  -files/_debian:
+  Insert clip-download calls at random times (between H+10 and H+50,
+  to avoid collisions with clip_install) into cron, to avoid trampling
+  herd effect on servers.
+  Switch to CCSD hash for start-stop-daemon's veriexec entry.
+
+*clip-download-1.3.10 (19 Jun 2008)
+
+  19 Jun 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.10.ebuild, -clip-download-1.3.9-r1.ebuild:
+  Do not install CAcert.pem as part of the package. This is an 
+  install parameter.
+
+*clip-download-1.3.9-r1 (24 Apr 2008)
+
+  24 Apr 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.9-r1.ebuild, -clip-download-1.3.9.ebuild:
+  Add CLSM_PRIV_PROCFD privs to start-stop-daemon.
+
+*clip-download-1.3.9 (07 Apr 2008)
+
+  07 Apr 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.9.ebuild, -clip-download-1.3.8.ebuild:
+  Workaround for 'awk {system("basename "$2)}' not working with
+  busybox awk.
+
+*clip-download-1.3.8 (28 Mar 2008)
+
+  28 Mar 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.8.ebuild, -clip-download-1.3.7.ebuild:
+  Use two different keys for signature verification.
+
+*clip-download-1.3.7 (19 Mar 2008)
+
+  19 Mar 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.7.ebuild, -clip-download-1.3.6.ebuild,
+  files/_debian/prerm, files/_debian/postinst:
+  Change /mounts/update_root to /update_root.
+
+*clip-download-1.3.6 (17 Jan 2008)
+
+  17 Jan 2008; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.6.ebuild, -clip-download-1.3.5.ebuild:
+  Merge of EADS's version 1.3.4, with following ChangeLog:
+
+	*clip-download-1.3.4 (15 Jan 2008)
+
+	  15 Jan 2008; EADS D&S <clipos@ssi.gouv.fr>
+	  +clip-download-1.3.4.ebuild:
+	  Ticket 70 correction (do not clean apt cache, preserve file attributs
+	  during copy)
+
+*clip-download-1.3.5 (26 Nov 2007)
+
+  26 Nov 2007; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.5.ebuild, -clip-download-1.3.4.ebuild:
+  Merge of EADS's version 1.3.3, with following ChangeLog :
+
+	*clip-download-1.3.3 (12 Nov 2007)
+
+	  12 Nov 2007; EADS D&S <clipos@ssi.gouv.fr>
+	  +clip-download-1.3.3.ebuild:
+	  Ticket 54 correction (connection keys in /etc/clip_update)
+	  Ticket 58 correction (if download locked, return a specific status)
+	  Ticket 65 correction ("Yes, do as I say ?")
+	  Ticket 69 correction (modify packages cleaning and correct a litle bug in
+	  format_date)
+	  Ticket 68 correction (error message in case of apt error)
+
+*clip-download-1.3.4 (21 Nov 2007)
+
+  21 Nov 2007; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.4.ebuild, -clip-download-1.3.3-r1.ebuild:
+  Make it possible for the clip_download init script to actually do something,
+  by starting it after racoon/iked, and retrying twice on the first download
+  to leave time for SAs to be established.
+  Make wether or not we run those downloads at boot a local tunable, as it 
+  can be very time-consuming... Downloads at boot are actually deactivated
+  by default.
+  
+*clip-download-1.3.3-r1 (16 Nov 2007)
+
+  16 Nov 2007; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.3-r1.ebuild, files/_debian/postinst,
+  -clip-download-1.3.3.ebuild:
+  Move the install_cert call from the static postinst to the dynamic
+  pkg_predeb(), so that it appears in the postinst script after the
+  conffile management (otherwise the first install fails to 
+  properly install cacert, since cacert.pem.confnew is not yet moved 
+  to cacert.pem when install_cert is called.
+  
+*clip-download-1.3.3 (08 Nov 2007)
+
+  08 Nov 2007; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.3.ebuild:
+  Merge from EADS's 1.3.2, with following ChangeLog: 
+
+	*clip-download-1.3.2 (07 Nov 2007)
+
+	  07 Nov 2007; EADS D&S <clipos@ssi.gouv.fr>
+	  +clip-download-1.3.2.ebuild:
+	  Ticket 21 corrected (download from a CD|DVD).
+	  Ticket 22 corrected (Unmet dependencies treatment).
+
+  07 Nov 2007; Vincent Strubel <clipos@ssi.gouv.fr>
+  Remove stale ebuilds before 1.3.2.
+
+*clip-download-1.3.2 (30 Oct 2007)
+
+  30 Oct 2007; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.2.ebuild, files/_debian/postinst, 
+  files/_debian/prerm:
+  Merge EADS's -1.3.1, with Changelog bellow. clip_update_unlock script
+  modified to return a proper exit code, and ebuild modified to remove RM
+  stuff if not USE core-rm. EADS's change to init.d/clip_download,
+  changing eend $? to eend 0 was not merged. If clip_download returns 
+  errors for no reason, it must be fixed, and not simply ignored.
+
+	*clip-download-1.3.1 (18 Oct 2007)
+
+	  18 Oct 2007; EADS D&S <clipos@ssi.gouv.fr>
+	  +clip-download-1.3.1.ebuild:
+	  Bugs in configuration ages management.
+	  Need to clean apt cache before apt-get update.
+	  Add clip_update_unlock init script.
+
+*clip-download-1.3.1 (22 Oct 2007)
+
+  22 Oct 2007; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.3.1.ebuild:
+  Merge 1.2-r1 and 1.2.1 into 1.3.
+
+*clip-download-1.2.1 (17 Oct 2007)
+
+  17 Oct 2007; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.2.1.ebuild:
+  Add CLIP_CONF_FILES. Fix Makefiles to install in /etc/admin 
+  rather than /mounts/admin_priv.. And fix ebuild to install 
+  in /var rather than /mounts/var.
+
+*clip-download-1.3 (04 Oct 2007)
+
+  04 Oct 2007; EADS D&S <clipos@ssi.gouv.fr>
+  +clip-download-1.3.ebuild:
+  Improve lock file management.
+  Modify default sources.list files.
+
+*clip-download-1.2-r1 (28 Sep 2007)
+
+  28 Sep 2007; Vincent Strubel <clipos@ssi.gouv.fr>
+  +clip-download-1.2-r1.ebuild:
+  Install a copy of install_cert in the admin tree so we don't 
+  need to bind mount it.
+
+*clip-download-1.1 (31 Aug 2007)
+
+  31 Aug 2007; EADS D&S <clipos@ssi.gouv.fr>
+  Add downloadmaster.
+  Launch clip_download and downloadmaster at boot.
+  Add start-stop-daemon.
+
+26 Jul 2007; EADS D&S <clipos@ssi.gouv.fr>
+  +clip-download-1.1.ebuild:
+  Use of the core-rm flag.
+  Correction of a bug in the prerm script (empty "root" file)
+  Use syslog
+  Modify /etc/admin installation dir
+  Change ownership of /mounts/admin_priv/etc.admin/clip_download directory
+
+19 Jul 2007; EADS D&S <clipos@ssi.gouv.fr>
+  +clip-download-1.1.ebuild:
+  Integrate the new version of verify-sign-full.
+
+*clip-download-1.0 (29 Jun 2007)
+
+  29 Jun 2007; EADS D&S <clipos@ssi.gouv.fr>
+  +clip-download-1.0.ebuild:
+  Initial import.

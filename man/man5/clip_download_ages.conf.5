@@ -1,0 +1,78 @@
+.TH CLIP_DOWNLOAD_AGES_CONF 5 "JUNE 2007" Linux "Programmer's Manual"
+.SH NAME
+clip_download_ages.conf \- The optional parameters file of 
+.B clip_download
+(8) giving the age limit of each configuration 
+.SH SYNOPSIS
+.B clip_download_ages.conf
+is named after the jail concerned : 
+
+.B - /etc/clip_download_ages_clip.conf
+for the
+.I clip
+jail.
+
+.B - /etc/clip_download_ages_rm_h.conf
+for the
+.I rm_h
+jail.
+
+.B - /etc/clip_download_ages_rm_b.conf
+for the
+.I rm_b
+jail.
+
+.SH DESCRIPTION
+This manual page describes the format of the
+.B clip_download_ages.conf
+file. This file is a simple text file that gives the optional parameters used by the
+.B clip_download
+(8) tool to check the age of each configuration composing the corresponding jail. Although the parameters are optional, the file is not and must be present. 
+For each parameter a single line should be present with the following information:
+.RS
+.PP
+parameter=value
+.RE
+.PP
+where 
+.I parameter
+is the name of the parameter
+and
+.I value
+is the value of the parameter.
+.SH OPTIONAL PARAMETERS
+\-
+.B confname_minimum_age
+: gives the minimum age in
+.I days
+of configuration
+.I confname.
+.I confname
+is the name of the configuration as described in the
+.I Package
+fied of the 
+.B .deb
+file representing the configuration. If the configuration age is lower than
+.B confname_minimum_age,
+then the configuration is considered too young.
+.PP
+\-
+.B confname_maximum_age
+: gives the maximum age in
+.I days
+of configuration
+.I confname.
+.I confname
+is the name of the configuration as described in the
+.I Package
+fied of the 
+.B .deb
+file representing the configuration. If the configuration age is greater than
+.B confname_maximum_age,
+then the configuration is considered too old.
+
+.SH AUTHORS
+EADS Defence And Security Systems
+.SH SEE ALSO
+.BR clip_download (8),
+.BR clip_download_ages.conf (5)

@@ -1,0 +1,114 @@
+.TH CLIP_DOWNLOAD 8 "JUNE 2007" Linux "User Manuals"
+.SH NAME
+clip_download \- Clip packages downloader.
+.SH SYNOPSIS
+.B clip_download
+[\-h] |\-v] -j
+.I jail
+.SH DESCRIPTION
+.B clip_download
+performs clip packages download for a given CLIP jail (clip, rm_h or rm_b).
+
+.B clip_download
+is a script intended to be run non-interactively.
+
+This script updates its own 
+.B apt
+cache using a debian mirror through https or on a cdrom. 
+
+It checks the signature of each package retrieved using
+.BR verify-sign-full (1).
+If the signature is wrong, it downloads and checks the package again. The maximum number of retries is given in the configuration file
+.BR clip_download.conf (5).
+If all tries are unsuccessfull, the package is removed from the cache.
+
+The script then checks the age of each package of type "configuration". Three possibilities are treated :
+.PP
+- the new configuration is too old : a parameter given in
+.BR clip_download_ages.conf (5) 
+specifies the lower time bound.
+
+- the new configuration is older than the old one (installed on the system).
+
+- the new configuration is too new : a parameter given in
+.BR clip_download_ages.conf (5) 
+gives the upper time bound.
+.PP
+In each case the tool can reject the configuration or not, depending of what
+.BR clip_download.conf (5) 
+specifies.
+
+The remaining configuration and packages are gathered to build the local mirrors using
+.BR apt-ftparchive.
+
+Finally the script removes from its cache the packages too old (the age limit is also given in
+.BR clip_download.conf (5)).
+
+The
+.B apt
+cache directory and the lock files managed by this tool MUST NOT be cleaned or removed manually. 
+.PP
+The
+.B apt.conf
+(5) configuration file used must be located in 
+.B /etc/clip_update/clip_download/
+and must be named after the jail to install :
+
+.B - /etc/clip_update/clip_download/apt.conf.clip
+for the
+.I clip
+jail.
+
+.B - /etc/clip_update/clip_download/apt.conf.rm_h
+for the
+.I rm_h
+jail.
+
+.B - /etc/clip_update/clip_download/apt.conf.rm_b
+for the
+.I rm_b
+jail.
+
+The logs are stored using 
+.BR logger (1).
+.SH MANDATORY PARAMETERS
+.IP \-j jail
+Specify the jail to treat. Should be either 
+.I clip
+or 
+.I rm_h
+or
+.I rm_b.
+.SH OPTIONS
+.IP \-h
+Print help and exit
+.IP \-v
+Print version of the utility and exit
+.SH RESOURCES
+.PP Depends on 
+.BR sh (1)
+,
+.BR awk (1)
+,
+.BR sed (1)
+,
+.BR find (1)
+,
+.BR logger (1)
+,
+.BR apt-cache (8)
+, 
+.BR apt-get (8)
+,
+.BR apt-ftparchive (8)
+,
+.BR verify-sign-full (1)
+and
+.BR clip_download.conf (5)
+.SH DIAGNOSTICS
+The script returns 2 if an error occured, 8 if a lock file is present, 0 otherwise.
+If the execution fails during packages installation, the utility will try to return to old state next time it will run.
+.SH AUTHORS
+EADS Defence And Security Systems
+.SH SEE ALSO
+.BR verify-sign-full (1), clip_download.conf (5), clip_download_ages.conf (5)

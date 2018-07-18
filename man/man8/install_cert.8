@@ -1,0 +1,31 @@
+.TH INSTALL_CERT 8 "JUNE 2007" Linux "User Manuals"
+.SH NAME
+install_cert \- HTTPS certificates installer.
+.SH SYNOPSIS
+.B install_cert
+[\-h] |\-v]
+.SH DESCRIPTION
+.B install_cert
+performs HTTPS certificates installation.
+For each certificate (extension
+.B .pem)
+provided in 
+.B /etc/admin/clip_download/cert,
+the script executes a treatment similar to
+.B c_rehash.
+.SH OPTIONS
+.IP \-h
+Print help and exit
+.IP \-v
+Print version of the utility and exit
+.SH RESOURCES
+.PP Depends on 
+.BR sh (1)
+and
+.BR openssl [ssl-openssl] (1ssl)
+.SH DIAGNOSTICS
+The script returns 1 if an error occured, 0 otherwise.
+.SH AUTHORS
+EADS Defence And Security Systems
+.SH SEE ALSO
+.BR ssl-openssl (1), clip_download(8)

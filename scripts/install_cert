@@ -1,0 +1,157 @@
+#!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# Copyright © 2007-2018 ANSSI. All Rights Reserved.
+set -e
+#######################################################################
+# CLIP certificates installation tool
+# Author: EADS Defence & Security
+#######################################################################
+
+# Positionning of the locale
+export LC_ALL=C
+
+# Global variables
+g_version="2.0"
+
+# Logger
+g_use_syslog="yes"
+g_logger_facility="syslog"
+g_logger_prefix="install_cert : "
+
+# Binaries directories
+g_bin_dir="/bin/"
+g_sbin_dir="/sbin/"
+g_usr_bin_dir="/usr/bin/"
+
+############################################
+# Function : log
+############################################
+log() {
+# Usage : log severity msg
+	if [ "${g_use_syslog}" = "yes" ]
+	then
+		${g_bin_dir}logger -p ${g_logger_facility}.${1} "${g_logger_prefix}${2}"
+	else
+		${g_bin_dir}echo "(${1}) ${2}" 
+	fi
+}
+
+############################################
+# Function : end on error
+############################################
+end_on_error() {
+	log "err" "Stopping install process."
+	exit 2
+}
+
+############################################
+# Function : display the usage of the tool
+############################################
+usage() {
+	${g_bin_dir}echo "Usage : install_cert [-hv] -d directory"
+	${g_bin_dir}echo "Install certificates to be used by clip_download"
+	${g_bin_dir}echo ""
+	${g_bin_dir}echo "Mandatory parameters are :"
+	${g_bin_dir}echo "  -d directory     directory where to find the certificates (must be RW)"
+	${g_bin_dir}echo ""
+	${g_bin_dir}echo "Options are :"
+	${g_bin_dir}echo "  -h			print this help"
+	${g_bin_dir}echo "  -v			print the version of this tool"
+	${g_bin_dir}echo ""
+}
+
+############################################
+# Function : display the version of the tool
+############################################
+version() {
+	${g_bin_dir}echo "install_cert version $g_version"
+}
+
+############################################
+# Function : verify if a directory exists
+############################################
+verify_directory() {
+	if [[ ! -d "${1}" ]]; then
+		log "err" "Directory $1 does not exist"
+		end_on_error
+	fi
+}
+
+############################################
+# Function : verify if a file exists 
+############################################
+verify_file() {
+	if [[ ! -f "${1}" ]]; then
+		log "err" "File $1 does not exist"
+		end_on_error
+	fi
+}
+
+############################################
+# Main
+############################################
+
+# Empty environnement
+env -i
+
+# Verify and set the options
+while getopts d:vh arg
+do
+	case $arg in
+		d)
+			g_directory="$OPTARG"
+		;;
+		v)
+			version
+			exit 0
+		;;
+		h)
+			usage
+			exit 0
+		;;
+		\?)
+			usage
+			exit 2
+		;;
+	esac
+done
+shift `expr $OPTIND - 1`
+
+if [[ "${g_directory}" == "" ]]; then
+	echo "Invalid directory [${g_directory}]"
+	usage
+	exit 1
+fi
+
+verify_directory "${g_directory}"
+
+liste="$(${g_bin_dir}/find "${g_directory}" -name "*.pem")"
+
+for elt in ${liste}
+do
+	verify_file "${elt}"
+
+	repertoire="$(dirname "${elt}")"
+	fichier="$(basename "${elt}")"
+
+	cd "${repertoire}"
+	# Do not warn about missing /etc/ssl/openssl.cnf
+	hash_value="$(OPENSSL_CONF=/dev/null ${g_usr_bin_dir}openssl x509 -hash -noout -in "${fichier}")"
+
+	if [[ -f "${hash_value}.0" ]]; then
+		rm -f "${hash_value}.0"
+	fi
+
+	${g_bin_dir}ln -sf "${fichier}" "${hash_value}.0"
+
+  # Do it again for "old" (md5sum) hashes
+	hash_value="$(OPENSSL_CONF=/dev/null ${g_usr_bin_dir}openssl x509 -subject_hash_old -noout -in "${fichier}")"
+
+	if [[ -f "${hash_value}.0" ]]; then
+		rm -f "${hash_value}.0"
+	fi
+
+	${g_bin_dir}ln -sf "${fichier}" "${hash_value}.0"
+done
+
+exit 0

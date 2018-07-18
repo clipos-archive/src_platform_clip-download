@@ -1,0 +1,598 @@
+#!/usr/bin/perl
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# Copyright © 2007-2018 ANSSI. All Rights Reserved.
+#######################################################################
+# clip_download - download up to date CLIP packages into local mirrors
+# Copyright (C) 2008-2009 SGDN/DCSSI
+# Copyright (C) 2010-2014 SGDSN/ANSSI
+# Author: Vincent Strubel <clipos@ssi.gouv.fr>
+#######################################################################
+
+##### 
+# Exit codes :
+#   0 : success
+#   1 : error (unspecified)
+#   8 : error, could not acquire lock
+#  11 : error, could not start signature checker
+#  12 : error, error recovery failed
+#  21 : error, failed to update apt db
+#  22 : error, failed to download all packages
+#  23 : error, failed to update local mirror
+####
+
+
+use strict;
+use warnings;
+use Getopt::Long;
+use File::Copy 'mv';
+use CLIP::Pkg::Base ':all';
+use CLIP::Pkg::Download ':all';
+use CLIP::Conf::Base ':all';
+
+use CLIP::Logger ':all';
+use Sys::Syslog qw(:macros);
+
+###############################################################
+#                    Global vars                              #
+###############################################################
+
+
+###### Consts ######
+# Match possible jails with distribution
+my %g_jails = (	
+		clip	=>	"clip", 
+		rm_h	=>	"rm", 
+		rm_b	=>	"rm",
+);
+
+###### Paths ######
+
+$g_log_prefix = "clip_download";
+
+$g_log_debug = 0;
+
+$g_log_syslog = 1;
+$CLIP::Logger::g_facilities->{"warn"} = LOG_LOCAL7;
+$CLIP::Logger::g_facilities->{"log"} = LOG_LOCAL7;
+
+my $g_net_lock_file = "/var/run/net_no_download";
+
+my $g_core_update_notify = "/usr/local/var/core_avail";
+my $g_core_update_disable = "/var/pkg/clip_core_noupdate";
+
+# Defined based on command line
+my $g_jail = "";
+my $g_conf_file = ""; 
+my $g_ages_file = "";
+my $g_mirror_dir = "";
+my $g_dl_lock_file = "";
+my $g_lock_file = "";
+my $g_update_lock_file = "";
+my $g_apt_config = "";
+
+###### Options ######
+
+# Download retries
+$CLIP::Pkg::Download::g_dl_retries = 3;
+$CLIP::Pkg::Download::g_sourcelist_admin_dir = "/etc/admin/clip_download";
+
+###### Command line ######
+
+sub usage($) {
+	my $fh = shift;
+
+	print $fh "clip_download - synchronize local package mirrors against remote ones\n";
+	print $fh "Usage: clip_download -j <jail> [options]\n";
+	print $fh "Options:\n";
+	print $fh "   -j[ail] <jail>     : download packages for jail <jail>\n";
+	print $fh "   -t[rylock]         : use non-blocking locks\n";
+	print $fh "   -h[elp]            : display this help and exit\n";
+	print $fh "   -V[erbose]         : be more verbose\n";
+}
+
+sub merror($) {
+	my $msg = shift;
+
+	clip_warn $msg;
+	exit 1;
+}
+
+sub get_options() {
+	eval {
+		GetOptions (
+			'help'		=>	sub {usage(*STDOUT{IO}); exit 0},
+			'jail=s'	=>	\$g_jail,
+			'trylock'	=>	\$CLIP::Pkg::Base::g_lock_nonblock,
+			'Verbose'	=>	\$g_log_debug,
+		) or die 1;
+	};
+
+	return 0 if ($@);
+
+	merror "missing jail argument" if (not $g_jail);
+
+	merror "invalid jail argument: $g_jail" if (not grep {$_ eq $g_jail} (keys %g_jails));
+
+	$g_conf_file = "/etc/admin/clip_download/clip_download_$g_jail.conf";
+	$g_ages_file = "/etc/clip_update/clip_download/clip_download_ages_$g_jail.conf";
+	if ($g_jail eq "clip") {
+		$g_mirror_dir="/var/pkg";
+		$CLIP::Pkg::Base::g_optional_pkg_files = 
+			[ "/etc/admin/clip_install/optional.conf.clip" ];
+	} else {
+		$g_mirror_dir="/var/pkg/$g_jail";
+		$CLIP::Pkg::Base::g_optional_pkg_files = 
+			[ "/etc/admin/$g_jail/clip_install/optional.conf.rm" ];
+		$g_dl_lock_file="/var/pkg/dl_lock";
+	}
+	$g_lock_file="$g_mirror_dir/lock";
+	$g_update_lock_file="$g_mirror_dir/clip_update.lck";
+	$g_apt_config="/etc/clip_update/clip_download/apt.conf.$g_jail";
+
+	$CLIP::Pkg::Base::g_pkg_opts->{'Distribution'} = $g_jails{$g_jail};
+	# NB: No Impact / Priority checks on download
+
+	$CLIP::Pkg::Base::g_sigcheck_sockpath = "/var/run/sigcheck-download-$g_jail";
+
+	return 1;
+}
+
+sub check_option_files() {
+	merror "missing config file $g_conf_file" 
+					if (not -f $g_conf_file);
+	merror "missing ages file $g_ages_file" 
+					if (not -f $g_ages_file);
+	merror "missing mirror directory $g_mirror_dir" 
+					if (not -d $g_mirror_dir);
+	merror "missing apt config file $g_apt_config"
+					if (not -f $g_apt_config);
+}
+
+sub import_ages() {
+	open IN, "<", "$g_ages_file"
+		or merror "could not open ages file: $g_ages_file";
+	my @lines = <IN>;
+	close IN;
+
+	my $pname;
+	my $age;
+	my $minmax;
+	my $hash;
+	foreach my $line (@lines) {
+		next if (not $line =~ /^(\S+)_(minimum|maximum)_age=(\d+)/);
+		
+		$pname = $1;
+		$minmax = $2;
+		$age = $3;
+		
+		if ($minmax eq "minimum") {
+			$hash = $CLIP::Pkg::Base::g_conf_min_ages;
+		} else {
+			$hash = $CLIP::Pkg::Base::g_conf_max_ages;
+		}
+
+		if (defined ($hash->{$pname})) {
+			clip_warn "double definition of $minmax age for $pname";
+		}
+
+		$hash->{$pname} = $age;
+	}
+}
+		
+sub get_macaddr($) {
+	my $macfile=shift;
+
+	unless (open IN, "<", "$macfile") {
+		clip_warn "failed to open $macfile";
+		return undef;
+	}
+	my $mac = <IN>;
+	close(IN);
+	unless ($mac =~ /^[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}$/) {
+		clip_warn "failed to match a MAC address";
+		return undef;
+	}
+	return $mac;
+}
+
+sub get_hostname() {
+	open PIPE, "uname -n |";
+	my $name = <PIPE>;
+	close PIPE;
+	if ($?) {
+		clip_warn "failed to get the hostname";
+		return undef;
+	}
+	$name =~ s/\n$//g;
+	if ($name =~ s/[^-_.a-zA-Z0-9]//g) {
+		clip_warn "sanitizing hostname";
+	}
+	return $name;
+}
+
+sub get_config() {
+	my $tmp; 
+
+	if (defined ($tmp = clip_import_conf($g_conf_file, "max_number_of_tries", "\\d{1,2}"))) {
+		if ($tmp < 1 or $tmp >= 10) {
+			clip_warn "Invalid d/l retries number: $tmp, using default";
+		} else {
+			$CLIP::Pkg::Download::g_dl_retries = $tmp;
+		}
+	} # No error if not defined, use default
+
+	## Configuration dates ##
+	if (defined ($tmp = clip_import_conf($g_conf_file, "reject_too_young_configuration", "yes|no"))) {
+		if ($tmp eq "yes") {
+			$CLIP::Pkg::Base::g_conf_opts{'rej_young'} = 1;
+		} else  {
+			$CLIP::Pkg::Base::g_conf_opts{'rej_young'} = 0;
+		}
+	} 
+	if (defined ($tmp = clip_import_conf($g_conf_file, "reject_too_old_configuration", "yes|no"))) {
+		if ($tmp eq "yes") {
+			$CLIP::Pkg::Base::g_conf_opts{'rej_old'} = 1;
+		} else  {
+			$CLIP::Pkg::Base::g_conf_opts{'rej_old'} = 0;
+		}
+	} 
+	if (defined ($tmp = clip_import_conf($g_conf_file, "reject_older_configuration", "yes|no"))) {
+		if ($tmp eq "yes") {
+			$CLIP::Pkg::Base::g_conf_opts{'rej_older'} = 1;
+		} else  {
+			$CLIP::Pkg::Base::g_conf_opts{'rej_older'} = 0;
+		}
+	} 
+
+	if (defined ($tmp = clip_import_conf($g_conf_file, "verbose", "yes|no"))) {
+		if ($tmp eq "yes") {
+			$g_log_debug = 1;
+		} 
+	} 
+
+	## Apt / dpkg paths ##
+	# Relaxed regexps, these are trusted files
+	if (not defined ($tmp = clip_import_conf_sep($g_apt_config, "Dir::Cache", "\\S+", " "))) {
+		merror "could not read apt cache path";
+	} else {
+		$tmp =~ s/["";]//g;
+		$CLIP::Pkg::Download::g_apt_cache_dir = $tmp;
+	}
+
+	if (not defined ($tmp = clip_import_conf_sep($g_apt_config, "Dir::State::Status", "\\S+", " "))) {
+		merror "could not read dpkg admin path";
+	} else {
+		$tmp =~ s/["";]//g;
+		$tmp =~ s/\/status$//;
+		$CLIP::Pkg::Base::g_dpkg_admin_dir = $tmp;
+	}
+
+	if (not defined ($tmp = clip_import_conf_sep($g_apt_config, "Dir::Etc::SourceList", "\\S+", " "))) {
+		merror "could not read apt sourcelist path";
+	} else {
+		$tmp =~ s/["";]//g;
+		$CLIP::Pkg::Download::g_sourcelist_file = $tmp;
+	}
+
+	if (defined ($tmp = get_macaddr("/var/run/wired_mac"))) {
+		$CLIP::Pkg::Download::g_sourcelist_var_eth0 = $tmp;
+	}
+
+	if (defined ($tmp = get_hostname())) {
+		$CLIP::Pkg::Download::g_sourcelist_var_hostname = $tmp;
+	}
+
+	import_ages();
+}
+
+sub check_config_files() {
+	merror "no mirror directory $g_mirror_dir" unless (-d $g_mirror_dir);
+	merror "no cache directory $CLIP::Pkg::Download::g_apt_cache_dir"
+			unless (-d $CLIP::Pkg::Download::g_apt_cache_dir);
+	merror "no dpkg status directory $CLIP::Pkg::Base::g_dpkg_admin_dir"
+			unless (-d $CLIP::Pkg::Base::g_dpkg_admin_dir);
+}
+
+sub check_core_update($$) {
+	my ($conflist, $notif_path) = @_;
+
+	my $ret = 1;
+
+CONFLOOP:
+	foreach my $conf (@{$conflist}) {
+		my $confpath = "$g_mirror_dir/mirrors/$g_jails{$g_jail}/$conf";
+		my $cinfo;
+		if (not defined ($cinfo = clippkg_get_fields($confpath, "Priority"))) {
+			clip_warn "failed to read Priority on $confpath";
+			next CONFLOOP;
+		}
+		if ($cinfo->{"Priority"} =~ /Required/) {
+			clip_log "New core configuration available";
+			if (not open NEW, ">", "$notif_path") {
+				clip_warn "failed to open $notif_path";
+				return 0;
+			}
+			close NEW;
+
+			unlink $g_core_update_disable if (-e $g_core_update_disable);
+
+			$ret = 2;
+			last CONFLOOP;
+		}
+	}
+
+	return $ret;
+}
+
+# update optional.conf file by removing all entries in it which are not allowed optional
+# packages.
+sub update_optional_conf($$) {
+	my ($conffile, $optnames) = @_;
+
+	unless (open IN, "<", $conffile) {
+		clip_warn "Failed to open $conffile for reading";
+		return 0;
+	}
+
+	my @lines = <IN>;
+	close IN;
+
+	my ($uid, $gid) = (stat($conffile))[4,5];
+	
+	unless (open OUT, ">", "$conffile.new") {
+		clip_warn "Failed to open $conffile.new for writing";
+		return 0;
+	}
+
+	foreach my $line (@lines) {
+		chomp $line;
+		if (defined($optnames->{$line})) {
+			print OUT "$line\n";
+		} else {
+			clip_warn "Removing invalid optional package $line from $conffile";
+		}
+	}
+	close OUT;
+
+	unless (chown($uid, $gid, "$conffile.new")) {
+		clip_warn "Failed to change ownership of $conffile.new to $uid:$gid";
+		return 0;
+	}
+
+	unless (mv("$conffile.new", "$conffile")) {
+		clip_warn "Failed to rename $conffile.new to $conffile";
+		return 0;
+	}
+
+	unless (chmod(0644, "$conffile")) {
+		clip_warn "Failed to set permissions on $conffile";
+		return 0;
+	} 
+
+	return 1;
+}
+
+# generate a cache of optional packages (Category/Name/Description) for later use by clip-config -U
+# and update optional.conf
+sub list_optional() {
+	# dpkg tends to have non-consistent behaviour when it comes to the 
+	# capitalization of field names, so we're better off trying every
+	# possibility
+	my @descnames = ( "Description-fr", "Description-Fr", "description-fr" );
+	my @catnames = ( "Category-fr", "Category-Fr", "category-fr" );
+	my $nocat = "Pas de catégorie";
+	my @jailsnames = ( "CLIP-Jails", "Clip-Jails", "clip-jails" );
+	my $conf = clippkg_get_confname($g_jails{$g_jail}, "apps", $g_jail);
+	my $outfile = $CLIP::Pkg::Download::g_apt_cache_dir."/optional.cache";
+
+	my %outhash = ();
+	my %optnames = ();
+	my $fields;
+	unless (defined($fields = clippkg_cache_get_fields($conf))) {
+		clip_warn "list_optional: could not get cached field for $conf";
+		return 0;
+	}
+
+	goto output unless (defined ($fields->{"Suggests"}));
+
+	my $optionals = $fields->{"Suggests"};
+	$optionals =~ s/\([^\)]+\)//g;
+	$optionals =~ s/,//g;
+	$optionals =~ s/  / /g;
+	my @optlist = split " ", $optionals;
+
+	PKGLOOP:
+	foreach my $pname (@optlist) {
+		my $pfields;
+		unless (defined($pfields = clippkg_cache_get_all_fields($pname))) {
+			clip_warn "No fields for $pname";
+			next PKGLOOP;
+		}
+
+		foreach my $jailsname (@jailsnames) {
+			if (defined($pfields->{$jailsname})) {
+				my @jails = split ":", $pfields->{$jailsname};
+				unless (grep {/^$g_jail$/} @jails) {
+					clip_log "$pname not for jail $g_jail";
+					next PKGLOOP;
+				}
+				last;
+			}
+		}
+
+		my $cat;
+		my $desc;
+
+		foreach my $descname (@descnames) {
+			if (defined($pfields->{$descname})) {
+				$desc = $pfields->{$descname}; 
+				last;
+			}
+		}
+		next PKGLOOP unless ($desc);
+
+		foreach my $catname (@catnames) {
+			if (defined($pfields->{$catname})) {
+				$cat = $pfields->{$catname};
+				last;
+			}
+		}
+		$cat = $nocat unless ($cat);
+			
+		if (defined($outhash{$cat})) {
+			$outhash{$cat}->{$pname} = $desc;
+		} else {
+			$outhash{$cat} = { $pname => $desc };
+		}
+
+		# Build a simple list of optional package names as well, to check
+		# optional.conf against it.
+		$optnames{$pname} = 1;
+	}
+
+	# Cache results
+ 	output:
+	open OUT, ">", "$outfile.new" or return 0;
+
+	my $hash;
+	CATLOOP:
+	foreach my $cat (sort keys %outhash) {
+		next CATLOOP if ($cat eq $nocat);
+		$hash = $outhash{$cat};
+		foreach my $pname (sort keys %{$hash}) {
+			print OUT "$cat//$pname $hash->{$pname}\n";
+		}
+	}
+	if (defined($outhash{$nocat})) {
+		$hash = $outhash{$nocat};
+		foreach my $pname (sort keys %{$hash}) {
+			print OUT "$nocat//$pname $hash->{$pname}\n";
+		}
+	}
+	close OUT;
+
+	clip_warn "Failed to move $outfile.new to $outfile" 
+		unless (mv("$outfile.new", "$outfile"));
+
+	unless (chmod(0644, "$outfile")) {
+		clip_warn "Failed to set permissions on $outfile";
+		return 0;
+	} 
+
+	foreach my $conffile (@{$CLIP::Pkg::Base::g_optional_pkg_files}) {
+		clip_warn "Failed to update optional conf $conffile" 
+			unless update_optional_conf($conffile, \%optnames);
+	}
+	return 1;
+}
+
+sub cleanup($) {
+	my $reason = shift;
+
+	clip_warn "Abnormal termination: $reason. Cleaning up.";
+
+	clippkg_sigcheck_stop();
+
+	exit 1;
+}
+
+###############################################################
+#                    Main                                     #
+###############################################################
+
+clip_logger_init;
+get_options or merror "failed to parse options";
+clip_log "starting run for jail $g_jail";
+check_option_files;
+get_config;
+check_config_files;
+
+if (-e $g_update_lock_file) {
+	merror "update downloads are locked for jail $g_jail";
+}
+
+if (not $CLIP::Pkg::Base::g_lock_nonblock and -e $g_net_lock_file) {
+	merror "update downloads are disabled by current network config";
+}
+
+my $lock;
+my $dl_lock = 0;
+my $ret = 1;
+my $errstr;
+
+my %errstr2err = (
+	"update"	=>	21,
+	"download"	=>	22,
+	"mirror"	=>	23,
+);
+
+my $arch; 
+if (not defined($arch = clippkg_get_arch())) {
+	merror "could not get arch string, aborting";
+}
+
+if (not defined ($lock = clippkg_lock($g_lock_file))) {
+	if (not $CLIP::Pkg::Base::g_lock_nonblock) {
+		merror "could not lock $g_lock_file, aborting";
+	} else {
+		clip_warn "could not lock $g_lock_file, aborting";
+		exit 8;  # Specific exit code recognized by downloadmaster...
+	}
+}
+
+# RM jail automatic downloads - prevent simultaneous downloads for two 
+# different RM jails, as this would defeat the purpose of caching downloaded
+# packages across all RM jails..
+if ($g_dl_lock_file and not $CLIP::Pkg::Base::g_lock_nonblock) {
+	if (not defined ($dl_lock = clippkg_lock($g_dl_lock_file))) {
+		merror "could not lock $g_lock_file, aborting";
+	}
+}
+
+$ENV{'APT_CONFIG'} = $g_apt_config;
+
+local $SIG{__DIE__} = sub {cleanup("uncaught die()")};
+local $SIG{'INT'} = sub {cleanup("interrupted")};
+local $SIG{'QUIT'} = sub {cleanup("interrupted")};
+local $SIG{'TERM'} = sub {cleanup("killed")};
+local $SIG{'ABRT'} = sub {cleanup("aborted")};
+
+if (not clippkg_sigcheck_start(1)) {
+	clip_warn "failed to start signature checker, aborting";
+	$ret = 11;
+	goto OUT;
+}
+
+my @recovered = (); 
+if (not clippkg_download_error_recovery ($g_mirror_dir, $g_jails{$g_jail}, \@recovered)) {
+	clip_warn "error recovery failed, aborting";
+	$ret = 12;
+	goto OUT;
+}
+
+my @conflist = ();
+if (not clippkg_update_mirror($g_mirror_dir, $g_jails{$g_jail}, \@recovered, \@conflist, \$errstr)) {
+	clip_warn "update failed for jail $g_jail";
+	$ret = $errstr2err{$errstr};
+	goto OUT;
+}
+
+check_core_update(\@conflist, $g_core_update_notify) 
+		if ($g_jail eq "clip" and $#conflist >= 0);
+clip_log "new configurations merged in the $g_jail mirror: ".(join " ", @conflist)
+	if ($#conflist >= 0);
+
+clip_warn "Failed to list optional packages"
+	unless (list_optional());
+
+clip_log "update complete for jail $g_jail";
+
+$ret = 0;
+
+OUT:
+clippkg_sigcheck_stop();
+clippkg_unlock($lock, $g_lock_file);
+clippkg_unlock($dl_lock, $g_dl_lock_file) if ($dl_lock);
+exit $ret;
+	
+

@@ -1,0 +1,23 @@
+#!/sbin/runscript
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# Copyright © 2007-2018 ANSSI. All Rights Reserved.
+
+source "/etc/conf.d/clip"
+
+depend() {
+	need localmount clip_update jail_init
+}
+
+NULLARGS="-i /dev/null -o /dev/null"
+
+start() {
+	ebegin "Starting clip_download daemon"
+	/sbin/vsctl ${NULLARGS} update enter -- /usr/sbin/start-stop-daemon --start --exec /usr/sbin/downloadmaster
+	eend $?
+}
+
+stop() {
+	ebegin "Stopping clip_download daemon"
+	/sbin/vsctl ${NULLARGS} update enter -- /usr/sbin/start-stop-daemon --stop --name downloadmaster
+	eend $?
+}

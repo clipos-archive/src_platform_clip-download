@@ -1,0 +1,83 @@
+.TH CLIP_DOWNLOAD_CONF 5 "JUNE 2007" Linux "Programmer's Manual"
+.SH NAME
+clip_download.conf \- The main and mandatory parameters file of 
+.B clip_download 
+(8)
+.SH SYNOPSIS
+.B clip_download.conf
+is named after the jail concerned : 
+
+.B - /etc/clip_download_clip.conf
+for the
+.I clip
+jail.
+
+.B - /etc/clip_download_rm_h.conf
+for the
+.I rm_h
+jail.
+
+.B - /etc/clip_download_rm_b.conf
+for the
+.I rm_b
+jail.
+
+.SH DESCRIPTION
+This manual page describes the format of the
+.B clip_download.conf
+file. This file is a simple text file that gives the parameters used by the
+.B clip_download
+(8) tool. For each parameter a single line should be present with the following information:
+.RS
+.PP
+parameter=value
+.RE
+.PP
+where 
+.I parameter
+is the name of the parameter
+and
+.I value
+is the value of the parameter.
+.SH MANDATORY PARAMETERS
+.PP
+\- 
+.B max_number_of_tries
+: gives the maximum number of tries during signature check. 
+.PP
+\- 
+.B reject_too_old_configuration
+: if set to
+.I yes,
+the tool will reject a too old configuration. 
+.PP
+\- 
+.B reject_too_young_configuration
+: if set to
+.I yes,
+the tool will reject a too young configuration. 
+.PP
+\- 
+.B reject_older_configuration
+: if set to
+.I yes,
+the tool will reject a new configuration older than the currently installed configuration. 
+.PP
+\-
+.B maximum_age
+: gives the maximum age in
+.I days
+of a package. Packages older than
+.B maximum_age
+are removed from the
+.B clip_download
+cache and from the local mirror.
+.PP
+The ages parameters of each configuration are given by the 
+.B /etc/clip_download_ages.conf
+file.
+.SH AUTHORS
+EADS Defence And Security Systems
+.SH SEE ALSO
+.BR clip_download (8),
+.BR clip_download_ages.conf(5)
